@@ -19,7 +19,7 @@ fun AppNavHost(navController: NavHostController) {
         navController = navController,
         startDestination = "main_graph"
     ) {
-        navigation(startDestination = "CameraView", route = "main_graph") {
+        navigation(startDestination = "MainScreen", route = "main_graph") {
             composable("MainScreen") {
                 MainScreen()
             }

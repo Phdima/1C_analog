@@ -1,8 +1,6 @@
 package com.example.a1cfucker.Project.presentation.screens
 
-import android.graphics.ImageFormat
 import android.util.Log
-import android.util.Size
 import android.view.ViewGroup
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -12,7 +10,17 @@ import androidx.camera.view.PreviewView
 import androidx.camera.core.Preview
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,13 +31,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.a1cfucker.Project.domain.model.BarcodeResult
 import com.example.a1cfucker.Project.presentation.viewmodels.ScannerViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -132,6 +150,7 @@ fun ScannerScreen(
                     }
                 }
             )
+            ScanningOverlay()
         }
 
         else -> {
@@ -140,21 +159,111 @@ fun ScannerScreen(
             }
         }
     }
-    when(val state = viewModel.barcodeState.value) {
-        is BarcodeResult.Success -> {
-            Log.d("UIscan", "Scanned: ${state.value}")
-            Text("Scanned: ${state.value}")
-        }
-        is BarcodeResult.Error -> {
-            Log.e("UIscan", "Error: ${state.message}")
-            Text("Error: ${state.message}")
-        }
-        BarcodeResult.Loading -> {
-            Log.d("UIscan", "Scanning...")
-            CircularProgressIndicator()
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        when (val state = viewModel.barcodeState.value) {
+            is BarcodeResult.Success -> {
+                Log.d("UIscan", "Scanned: ${state.value}")
+                Text("Scanned: ${state.value}")
+            }
+
+            is BarcodeResult.Error -> {
+                Log.e("UIscan", "Error: ${state.message}")
+                Text("Error: ${state.message}")
+            }
+
+            BarcodeResult.Loading -> {
+                Log.d("UIscan", "Scanning...")
+                CircularProgressIndicator()
+            }
         }
     }
+}
 
+@Composable
+fun ScanningOverlay() {
+    val scanAreaSize = 280.dp
+    val borderColor = Color.Green
+    val borderWidth = 2.dp
+    val density = LocalDensity.current
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Фон с затемнением
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val scanAreaPx = with(density) { scanAreaSize.toPx() }
+            val centerX = size.width / 2
+            val centerY = size.height / 2
+
+            // Верхний прямоугольник (над сканируемой областью)
+            drawRect(
+                color = Color.Black.copy(alpha = 0.6f),
+                topLeft = Offset(0f, 0f),
+                size = Size(size.width, centerY - scanAreaPx / 2)
+            )
+
+            // Нижний прямоугольник (под сканируемой облацией)
+            drawRect(
+                color = Color.Black.copy(alpha = 0.6f),
+                topLeft = Offset(0f, centerY + scanAreaPx / 2),
+                size = Size(size.width, size.height - (centerY + scanAreaPx / 2))
+            )
+
+            // Левый прямоугольник (слева от сканируемой области)
+            drawRect(
+                color = Color.Black.copy(alpha = 0.6f),
+                topLeft = Offset(0f, centerY - scanAreaPx / 2),
+                size = Size(centerX - scanAreaPx / 2, scanAreaPx)
+            )
+
+            // Правый прямоугольник (справа от сканируемой области)
+            drawRect(
+                color = Color.Black.copy(alpha = 0.6f),
+                topLeft = Offset(centerX + scanAreaPx / 2, centerY - scanAreaPx / 2),
+                size = Size(size.width - (centerX + scanAreaPx / 2), scanAreaPx)
+            )
+        }
+
+        // Рамка сканирования
+        Box(
+            modifier = Modifier
+                .size(scanAreaSize)
+                .align(Alignment.Center)
+                .border(
+                    width = borderWidth,
+                    color = borderColor,
+                    shape = RoundedCornerShape(8.dp)
+                )
+        )
+
+        // Анимированная линия сканирования
+        val infiniteTransition = rememberInfiniteTransition()
+        val scanOffset by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1500, easing = LinearEasing)
+            ), label = ""
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(scanAreaSize)
+                .clip(RoundedCornerShape(8.dp))
+                .drawWithContent {
+                    drawContent()
+                    drawLine(
+                        color = borderColor.copy(alpha = 0.7f),
+                        start = Offset(0f, size.height * scanOffset),
+                        end = Offset(size.width, size.height * scanOffset),
+                        strokeWidth = 4.dp.toPx()
+                    )
+                }
+        )
+    }
 }
 
 private fun processImage(
