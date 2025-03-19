@@ -36,12 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -150,7 +146,7 @@ fun ScannerScreen(
                     }
                 }
             )
-            ScanningOverlay()
+                ScanningOverlay()
         }
 
         else -> {
@@ -191,34 +187,29 @@ fun ScanningOverlay() {
     val density = LocalDensity.current
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Фон с затемнением
         Canvas(modifier = Modifier.fillMaxSize()) {
             val scanAreaPx = with(density) { scanAreaSize.toPx() }
             val centerX = size.width / 2
             val centerY = size.height / 2
 
-            // Верхний прямоугольник (над сканируемой областью)
             drawRect(
                 color = Color.Black.copy(alpha = 0.6f),
                 topLeft = Offset(0f, 0f),
                 size = Size(size.width, centerY - scanAreaPx / 2)
             )
 
-            // Нижний прямоугольник (под сканируемой облацией)
             drawRect(
                 color = Color.Black.copy(alpha = 0.6f),
                 topLeft = Offset(0f, centerY + scanAreaPx / 2),
                 size = Size(size.width, size.height - (centerY + scanAreaPx / 2))
             )
 
-            // Левый прямоугольник (слева от сканируемой области)
             drawRect(
                 color = Color.Black.copy(alpha = 0.6f),
                 topLeft = Offset(0f, centerY - scanAreaPx / 2),
                 size = Size(centerX - scanAreaPx / 2, scanAreaPx)
             )
 
-            // Правый прямоугольник (справа от сканируемой области)
             drawRect(
                 color = Color.Black.copy(alpha = 0.6f),
                 topLeft = Offset(centerX + scanAreaPx / 2, centerY - scanAreaPx / 2),
@@ -226,7 +217,6 @@ fun ScanningOverlay() {
             )
         }
 
-        // Рамка сканирования
         Box(
             modifier = Modifier
                 .size(scanAreaSize)
@@ -238,7 +228,6 @@ fun ScanningOverlay() {
                 )
         )
 
-        // Анимированная линия сканирования
         val infiniteTransition = rememberInfiniteTransition()
         val scanOffset by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -273,10 +262,11 @@ private fun processImage(
     try {
         val mediaImage = imageProxy.image ?: return
         val rotation = imageProxy.imageInfo.rotationDegrees
+
         val image = InputImage.fromMediaImage(mediaImage, rotation)
         onImageProcess(image, imageProxy)
     } catch (e: Exception) {
-        Log.e("MLKit", "Image processing error", e)
+        Log.e("ERROR", "Processing failed: ${e.stackTraceToString()}")
         imageProxy.close()
     }
 }

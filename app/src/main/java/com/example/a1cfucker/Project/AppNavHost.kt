@@ -23,7 +23,7 @@ fun AppNavHost(navController: NavHostController) {
             composable("MainScreen") {
                 MainScreen()
             }
-            composable("CameraView") {
+            composable("ScannerScreen") {
                 ScannerScreen()
             }
         }

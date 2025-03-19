@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.compose.rememberNavController
+import com.example.a1cfucker.Project.presentation.screens.SideMenu
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -16,9 +17,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
+
             CompositionLocalProvider(LocalNavController provides navController) {
-                AppNavHost(navController = LocalNavController.current)
+                SideMenu(
+                    onItemClick = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                ) { AppNavHost(navController = LocalNavController.current) }
             }
+
         }
     }
 }
